@@ -1,0 +1,3 @@
+[submodule "lean4"]
+	path = lean4
+	url = git://github.com/leanprover/lean4.git
