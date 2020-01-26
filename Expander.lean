@@ -278,11 +278,7 @@ def y := const x
 #eval run "
 macro \"m\" n:ident : command => `(
   def f := 1
-  macro \"mm\" : command => `(
-    def $n:ident := f
-    def f := $n:ident
-  )
-)
+  macro \"mm\" : command => `(def $n:ident := f    def f := $n:ident))
 m f
 mm
 mm

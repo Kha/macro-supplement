@@ -69,21 +69,14 @@ macro_rules
 end Union
 
 
--- final_example
-declare_syntax_cat setIdx
-syntax term           : setIdx
-syntax ident ":" term : setIdx  -- NOTE: not a valid term syntax
-
-syntax "{" setIdx "|" term "}" : term
-macro_rules
-| `({$x : $t | $p}) ⇒ `(setOf (fun ($x : $t) ⇒ $p))
--- end
+-- final example: see ./Bigop.lean
 end «2»
 
 
 section «3»
 section
 -- see also ./Expander.lean
+
 -- hygiene_example
 def x := 1
 def e := fun (y : Nat) ⇒ x
@@ -91,6 +84,16 @@ notation "const" e ⇒ fun (x : Nat) ⇒ e
 def y := const x
 -- end
 #check y
+
+
+-- hygiene_example2
+macro "m" n:ident : command => `(
+  def f := 1
+  macro "mm" : command => `(def $n:ident := f    def f := $n:ident))
+-- end
+m f
+mm
+mm
 end
 end «3»
 
