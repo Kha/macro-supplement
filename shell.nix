@@ -19,6 +19,14 @@ let
   emacs = pkgs.emacsWithPackages (epkgs:
     # ???
     with pkgs.emacsPackages.melpaPackages; [ dash dash-functional f flycheck s ] ++ [ lean4-mode ]);
-in pkgs.mkShell {
-  buildInputs = with pkgs; [ lean ];
+in {
+  lean = pkgs.mkShell {
+    buildInputs = [ lean ];
+  };
+  emacs = pkgs.mkShell {
+    shellHook = ''
+${emacs}/bin/emacs Examples.lean
+exit 0
+    '';
+  };
 }
