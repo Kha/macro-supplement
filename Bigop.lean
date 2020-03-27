@@ -84,7 +84,7 @@ macro "Π" "(" idx:index ")" F:term : term => `(\big_ [HasMul.mul, 1] ($idx:inde
 syntax ident "|" term : index
 syntax ident ":" term : index
 syntax ident ":" term "|" term : index
--- And new rules
+-- Add new rules
 macro_rules
 | `(\big_ [$op, $idx] ($i:ident : $type) $F) => `(bigop $idx (Enumerable.elems $type) (fun $i:ident => ($i:ident, $op, true, $F)))
 | `(\big_ [$op, $idx] ($i:ident : $type | $p) $F) => `(bigop $idx (Enumerable.elems $type) (fun $i:ident => ($i:ident, $op, $p, $F)))
@@ -103,3 +103,14 @@ def myPred (x : Fin 10) : Bool := true
 macro "Σ" idx:index "," F:term : term => `(Σ ($idx:index) $F)
 
 #check Σ 10 ≤ i < 20, i+1
+
+-- Finally, we create a command for automating the generation of big operators.
+syntax "def_bigop" str term:max term:max : command
+-- Antiquotations can be nested as in `$$F`, which expands to `$F`, i.e. the value of
+-- `F` is inserted only in the second expansion, the expansion of the new macro `$head`.
+macro_rules
+| `(def_bigop $head $op $unit) =>
+   `(macro $head:strLit "(" idx:index ")" F:term : term => `(\big_ [$op, $unit] ($$idx:index) $$F))
+
+def_bigop "SUM" Nat.add 0
+#check SUM (i <- [0, 1, 2]) i+1
