@@ -5,7 +5,7 @@ namespace Expander
 -- Result of name resolution. As in the paper, we will ignore the second component here.
 abbrev NameRes := Name × List String
 -- We model the global context more precisely as a mapping from symbols to qualified symbols,
--- e.g. (`a ↦ [`a.a, `a.b])
+-- e.g. (`a ↦ [`ns1.a, `ns2.a])
 abbrev GlobalContext := Name → List NameRes
 
 -- the simplified transformer monad
@@ -172,7 +172,7 @@ partial def pp : Syntax → Format
     | [] => ppIdent id.getId
     | ps => ppIdent id.getId ++ bracket "{" (joinSep (ps.map (fmt ∘ Prod.fst)) ", ") "}"
   | `(fun ($id : $ty) => $e) => paren $ "fun " ++ paren (pp id ++ " : " ++ pp ty) ++ " ⇒ " ++ pp e
-  | `(fun $id => $e) => paren $ "fun " ++ pp id ++ " ⇒ " ++ pp e
+  | `(fun $id => $e) => paren $ "fun " ++ pp id ++ " => " ++ pp e
   | `($num:numLit) => fmt (num.isNatLit?.getD 0)
   | `($str:strLit) => repr (str.isStrLit?.getD "")
   | `($fn $args*) => paren $ pp fn ++ " " ++ joinSep (args.toList.map pp) line
@@ -210,7 +210,7 @@ match e {
     else
       let table := (macroAttribute.ext.getState st.env).table;
       match table.find? k with
-      | some (t::_) => some (fun stx ctx => match t stx {mainModule := `Expander, ..ctx} with Except.ok stx => stx | _ => Syntax.missing)
+      | some (t::_) => some (fun stx ctx => match t stx {mainModule := `Expander, ..ctx} 0 with EStateM.Result.ok stx s => stx | _ => Syntax.missing)
       | _           => none
 } (st.nextMacroScope + 1) with
 | Except.ok (stx, nextMacroScope) => do
