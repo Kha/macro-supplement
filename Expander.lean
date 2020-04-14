@@ -81,7 +81,7 @@ match ctx.macros k with
 
 -- expand
 partial def expand : Syntax → ExpanderM Syntax
-| stx ⇒ match_syntax stx with
+| stx => match_syntax stx with
   | `($id:ident) => do
     let val := getIdentVal id;
     gctx ← getGlobalContext;
@@ -89,19 +89,19 @@ partial def expand : Syntax → ExpanderM Syntax
     if lctx.contains val then
       pure (mkTermId val)
     else match resolve gctx val ++ getPreresolved id with
-      | []        ⇒ throw ("unknown identifier " ++ toString val)
-      | [(id, _)] ⇒ pure (mkTermId id)
-      | ids       ⇒ pure (mkOverloadedIds ids)
-  | `(fun ($id:ident : $ty) ⇒ $e) ⇒ do
+      | []        => throw ("unknown identifier " ++ toString val)
+      | [(id, _)] => pure (mkTermId id)
+      | ids       => pure (mkOverloadedIds ids)
+  | `(fun ($id:ident : $ty) => $e) => do
     let val := getIdentVal id;
     ty ← expand ty;
     e ← withLocal val (expand e);
-    `(fun ($(mkTermId val) : $ty) ⇒ $e)
+    `(fun ($(mkTermId val) : $ty) => $e)
 -- end
   -- more core forms
-  | `(fun $id:ident ⇒ $e) ⇒ do
+  | `(fun $id:ident => $e) => do
     e ← withLocal (getIdentVal id) (expand e);
-    `(fun $id:ident ⇒ $e)
+    `(fun $id:ident => $e)
   | `($num:num) => `($num:num)
   | `($str:str) => `($str:str)
   | `($n:quotedName) => `($n:quotedName)
@@ -129,17 +129,17 @@ partial def expand : Syntax → ExpanderM Syntax
 open Lean.Elab.Term.Quotation
 -- quoteSyntax
 partial def quoteSyntax : Syntax → TransformerM Syntax
-| Syntax.ident info rawVal val preresolved ⇒ do
+| Syntax.ident info rawVal val preresolved => do
   gctx ← getGlobalContext;
   let preresolved := resolve gctx val ++ preresolved;
   `(Syntax.ident none $(quote rawVal) (addMacroScope $(quote val) msc) $(quote preresolved))
-| stx@(Syntax.node k args) ⇒
+| stx@(Syntax.node k args) =>
   if isAntiquot stx then pure (getAntiquotTerm stx)
   else do
     args ← args.mapM quoteSyntax;
     `(Syntax.node $(quote k) $(quote args))
-| Syntax.atom info val ⇒ `(Syntax.atom none $(quote val))
-| Syntax.missing ⇒ pure Syntax.missing
+| Syntax.atom info val => `(Syntax.atom none $(quote val))
+| Syntax.missing => pure Syntax.missing
 
 def expandStxQuot (stx : Syntax) : TransformerM Syntax := do
 stx ← quoteSyntax (stx.getArg 1);
@@ -171,7 +171,7 @@ partial def pp : Syntax → Format
   | `($id:ident) => match getPreresolved id with
     | [] => ppIdent id.getId
     | ps => ppIdent id.getId ++ bracket "{" (joinSep (ps.map (fmt ∘ Prod.fst)) ", ") "}"
-  | `(fun ($id : $ty) => $e) => paren $ "fun " ++ paren (pp id ++ " : " ++ pp ty) ++ " ⇒ " ++ pp e
+  | `(fun ($id : $ty) => $e) => paren $ "fun " ++ paren (pp id ++ " : " ++ pp ty) ++ " => " ++ pp e
   | `(fun $id => $e) => paren $ "fun " ++ pp id ++ " => " ++ pp e
   | `($num:numLit) => fmt (num.isNatLit?.getD 0)
   | `($str:strLit) => repr (str.isStrLit?.getD "")
@@ -270,8 +270,8 @@ end Elaboration
 
 #eval run "
 def x := 1
-def e := fun (y : Nat) ⇒ x
-notation \"const\" e ⇒ fun (x : Nat) ⇒ e
+def e := fun (y : Nat) => x
+notation \"const\" e => fun (x : Nat) => e
 def y := const x
 "
 

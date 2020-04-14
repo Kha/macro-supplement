@@ -11,28 +11,28 @@ axiom Typing : Ctxt → Term → Typ → Type
 -- NOTE: example in the paper is minimally simplified by eliding the otherwise irrelevant token precedence
 /-
 -- typing
-notation Γ "⊢" e ":" τ ⇒ Typing Γ e τ
+notation Γ "⊢" e ":" τ => Typing Γ e τ
 -- end
 -/
-notation Γ "⊢":50 e ":" τ ⇒ Typing Γ e τ
+notation Γ "⊢":50 e ":" τ => Typing Γ e τ
 #check fun a b c => a ⊢ b : c
---macro Γ:term "⊢":50 e:term ":" τ:term : term ⇒ `(Typing $Γ $e $τ)
+--macro Γ:term "⊢":50 e:term ":" τ:term : term => `(Typing $Γ $e $τ)
 --
 --syntax term "⊢":50 term ":" term : term
 --macro_rules
---| `($Γ ⊢ $e : $τ) ⇒ `(Typing $Γ $e $τ)
+--| `($Γ ⊢ $e : $τ) => `(Typing $Γ $e $τ)
 end Typing
 
 -- exists
-notation "∃" b "," P ⇒ Exists (fun b ⇒ P)
+notation "∃" b "," P => Exists (fun b => P)
 -- end
 #check ∃ x, x = x
 #check ∃ (x : Nat), x = x
 
 
 -- defthunk
-macro "defthunk" id:ident ":=" e:term : command ⇒
-`(def $id:ident := Thunk.mk (fun _ ⇒ $e))
+macro "defthunk" id:ident ":=" e:term : command =>
+`(def $id:ident := Thunk.mk (fun _ => $e))
 defthunk big := mkArray 100000 true
 -- end
 #check big
@@ -44,15 +44,15 @@ axiom setOf {α : Type} : (α → Prop) → Set α
 axiom mem {α : Type} : α → Set α → Prop
 axiom univ {α : Type} : Set α
 axiom Union {α : Type} : Set (Set α) → Set α
-macro x:term " ∈ ":100 s:term:99 : term ⇒ `(mem $x $s)
+macro x:term " ∈ ":100 s:term:99 : term => `(mem $x $s)
 
 -- union
 syntax "{" term "|" term "}" : term
 macro_rules
-| `({$x ∈ $s | $p}) ⇒ `(setOf (fun $x ⇒ $x ∈ $s ∧ $p))
-| `({$b      | $p}) ⇒ `(setOf (fun $b ⇒ $p))
+| `({$x ∈ $s | $p}) => `(setOf (fun $x => $x ∈ $s ∧ $p))
+| `({$b      | $p}) => `(setOf (fun $b => $p))
 
-notation "⋃" b "," p ⇒ Union {b | p}
+notation "⋃" b "," p => Union {b | p}
 -- end
 
 #check ⋃ x,              x = x
@@ -62,7 +62,7 @@ notation "⋃" b "," p ⇒ Union {b | p}
 
 -- le
 macro_rules
-| `({$x ≤ $e | $p}) ⇒ `(setOf (fun $x ⇒ $x ≤ $e ∧ $p))
+| `({$x ≤ $e | $p}) => `(setOf (fun $x => $x ≤ $e ∧ $p))
 -- end
 
 #check {x ≤ 1 | x = x}
@@ -79,8 +79,8 @@ section
 
 -- hygiene_example
 def x := 1
-def e := fun (y : Nat) ⇒ x
-notation "const" e ⇒ fun (x : Nat) ⇒ e
+def e := fun (y : Nat) => x
+notation "const" e => fun (x : Nat) => e
 def y := const x
 -- end
 #check y
@@ -100,7 +100,7 @@ end «3»
 
 section «6»
 -- myTac
-macro "myTac" : tactic ⇒ `(intro h; exact h)
+macro "myTac" : tactic => `(intro h; exact h)
 theorem triv (p : Prop) : p → p := begin myTac end
 -- end
 
