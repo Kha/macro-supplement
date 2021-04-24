@@ -135,11 +135,11 @@ partial def expand : Syntax → ExpanderM Syntax
     let e ← expand e
     `(def $id := $e)
   -- syntax: keep as-is
-  | `(syntax (name := $n) $args:stx* : $kind) => `(syntax (name := $n) $args:stx* : $kind)
+  | `(syntax $[(name := $n)]? $[(priority := $prio)]? $[$args:stx]* : $kind) => `(syntax $[(name := $n)]? $[(priority := $prio)]? $[$args:stx]* : $kind)
   -- macro_rules: expand rhs (but not lhs) to exercise syntax quotation macro
   | `(macro_rules | $lhs => $rhs) => do
     let vars ← getPatternVars lhs
-    let rhs ← vars.foldr (fun var ex => withLocal (var.getIdAt 0) ex) (expand rhs)
+    let rhs ← vars.foldr (fun var ex => withLocal var.getId ex) (expand rhs)
     `(macro_rules | $lhs => $rhs)
   | stx => do
     -- expansion consists of multiple commands => yield and get called back per command
@@ -154,13 +154,13 @@ partial def quoteSyntax : Syntax → TransformerM Syntax
   | Syntax.ident info rawVal val preresolved => do
     let gctx ← getGlobalContext
     let preresolved := resolve gctx val ++ preresolved
-    `(Syntax.ident none $(quote rawVal) (addMacroScope $(quote val) msc) $(quote preresolved))
+    `(Syntax.ident SourceInfo.none $(quote rawVal) (addMacroScope $(quote val) msc) $(quote preresolved))
   | stx@(Syntax.node k args) =>
     if isAntiquot stx then pure (getAntiquotTerm stx)
     else do
       let args ← args.mapM quoteSyntax
       `(Syntax.node $(quote k) $(quote args))
-  | Syntax.atom info val => `(Syntax.atom none $(quote val))
+  | Syntax.atom info val => `(Syntax.atom SourceInfo.none $(quote val))
   | Syntax.missing => pure Syntax.missing
 
 def expandStxQuot (stx : Syntax) : TransformerM Syntax := do
@@ -170,7 +170,7 @@ def expandStxQuot (stx : Syntax) : TransformerM Syntax := do
 
 -- two more, simple macros
 def expandDo : Transformer
-  | `(do $id:ident ← $val; $body:term) => `(HasBind.bind $val (fun $id:ident => $body))
+  | `(do $id:ident ← $val:term; $body:term) => `(Bind.bind $val (fun $id:ident => $body))
   | _                                  => pure Syntax.missing
 
 def expandParen : Transformer
@@ -196,7 +196,7 @@ partial def pp : Syntax → Format
   | `($str:strLit) => repr (str.isStrLit?.getD "")
   | `($fn $args*) => paren <| pp fn ++ " " ++ joinSep (args.toList.map pp) line
   | `(def $id:ident := $e) => f!"def {ppIdent id.getId} := {pp e}"
-  | `(syntax (name := $kind) $args:stx* : $cat) => "syntax ..."  -- irrelevant for this example
+  | `(syntax $[(name := $n)]? $[(priority := $prio)]? $[$args:stx]* : $kind) => "syntax ..."  -- irrelevant for this example
   | `(macro_rules | $lhs => $rhs) => f!"macro_rules |{lhs.reprint.getD ""} => {if hideMacroRulesRhs then f!"..." else pp rhs}"
   | stx => f!"<not a core form: {stx}>"
 
@@ -208,6 +208,7 @@ open Lean.Elab.Frontend
 -- run expander: adapt global context and set of macro from Environment
 def expanderToFrontend (ref : Syntax) (e : ExpanderM Syntax) : FrontendM Syntax := runCommandElabM <| withRef ref do
   let st ← get
+  let scope := st.scopes.head!
   match e {
     gctx := fun n => (match st.env.find? n with
       | some _ => [(n, [])]
@@ -216,7 +217,7 @@ def expanderToFrontend (ref : Syntax) (e : ExpanderM Syntax) : FrontendM Syntax 
     currMacroScope := st.nextMacroScope,
     macros := fun k =>
       -- our hardcoded example macros
-      if k == `Lean.Parser.Term.stxQuot then some expandStxQuot
+      if k == `Lean.Parser.Term.quot then some expandStxQuot
       else if k == `Lean.Parser.Term.do then some expandDo
       else if k == `Lean.Parser.Term.paren then some expandParen
       -- `notation`, `macro`, and macros generated at runtime
@@ -225,11 +226,25 @@ def expanderToFrontend (ref : Syntax) (e : ExpanderM Syntax) : FrontendM Syntax 
         match table.find? k with
         | some (t::_) => some (fun stx ctx =>
           match t stx {
-            macroEnv := arbitrary
             mainModule := `Expander
             currMacroScope := ctx.currMacroScope
             ref := ref
-          } 0 with
+            methods := Macro.mkMethods {
+              expandMacro?     := fun stx =>
+                try
+                  let newStx ← getMacros st.env stx
+                  pure (some newStx)
+                catch
+                  | Macro.Exception.unsupportedSyntax => pure none
+                  | ex                                => throw ex
+              hasDecl          := fun declName => return st.env.contains declName
+              getCurrNamespace := return scope.currNamespace
+              resolveNamespace? := fun n => return ResolveName.resolveNamespace? st.env scope.currNamespace scope.openDecls n
+              resolveGlobalName := fun n => return ResolveName.resolveGlobalName st.env scope.currNamespace scope.openDecls n
+            }
+          } {
+            macroScope := 0
+          } with
           | EStateM.Result.ok stx s => stx
           | _ => Syntax.missing)
         | _           => none
@@ -293,7 +308,9 @@ def y := const x
 #eval run "
 macro \"m\" n:ident : command => `(
   def f := 1
-  macro \"mm\" : command => `(def $n:ident := f    def f := $n:ident))
+  macro \"mm\" : command => `(
+    def $n:ident := f
+    def f := $n:ident))
 m f
 mm
 mm

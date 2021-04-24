@@ -41,13 +41,12 @@
         "temci": "temci"
       },
       "locked": {
-        "lastModified": 1619184409,
-        "narHash": "sha256-3I9f/waBJgZu8fJBeEZ6orQES9VpBlBoH+HnBO70yqM=",
-        "ref": "master",
-        "rev": "0e3db5b98b6e0395fb0e8597c85d83983cced30f",
-        "revCount": 24620,
-        "type": "git",
-        "url": "file:///home/sebastian/lean/lean"
+        "lastModified": 1619256308,
+        "narHash": "sha256-I2zD4yK8crt3g62rWZ8MKop7aQgGhGB338qO53IgGS0=",
+        "owner": "leanprover",
+        "repo": "lean4",
+        "rev": "d15e2b37568872bca1fef4cceb1dbf28c495b5dc",
+        "type": "github"
       },
       "original": {
         "owner": "leanprover",

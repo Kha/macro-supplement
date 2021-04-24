@@ -85,7 +85,9 @@ def y := const x
 -- hygiene_example2
 macro "m" n:ident : command => `(
   def f := 1
-  macro "mm" : command => `(def $n:ident := f    def f := $n:ident))
+  macro "mm" : command => `(
+    def $n := f
+    def f := $n))
 -- end
 m f
 mm
