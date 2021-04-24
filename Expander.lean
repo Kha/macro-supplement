@@ -105,7 +105,7 @@ partial def getPatternVars (stx : Syntax) : ExpanderM (Array Syntax) :=
 -- expand
 partial def expand : Syntax → ExpanderM Syntax
   | `($id:ident) => do
-    let val := getIdentVal id
+    let val : Name := getIdentVal id
     let gctx ← getGlobalContext
     let lctx ← getLocalContext
     if lctx.contains val then
@@ -114,7 +114,7 @@ partial def expand : Syntax → ExpanderM Syntax
       | []        => throw ("unknown identifier " ++ toString val)
       | [(id, _)] => pure (mkIdent id)
       | ids       => pure (mkOverloadedIds ids)
-  | `(fun ($id:ident : $ty) => $e) => do
+  | `(fun ($id : $ty) => $e) => do
     let val := getIdentVal id
     let ty ← expand ty
     let e ← withLocal val (expand e)
@@ -154,7 +154,8 @@ partial def quoteSyntax : Syntax → TransformerM Syntax
   | Syntax.ident info rawVal val preresolved => do
     let gctx ← getGlobalContext
     let preresolved := resolve gctx val ++ preresolved
-    `(Syntax.ident SourceInfo.none $(quote rawVal) (addMacroScope $(quote val) msc) $(quote preresolved))
+    `(Syntax.ident SourceInfo.none $(quote rawVal)
+        (addMacroScope $(quote val) msc) $(quote preresolved))
   | stx@(Syntax.node k args) =>
     if isAntiquot stx then pure (getAntiquotTerm stx)
     else do

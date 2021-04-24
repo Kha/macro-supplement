@@ -103,7 +103,8 @@ theorem triv (p : Prop) : p → p := by myTac
 
 open Lean.Elab.Tactic
 -- myTac2
-def myTac2 : TacticM Unit :=
-  do let stx ← `(tactic|intro h; exact h); evalTactic stx
+def myTac2 : TacticM Unit := do
+  let stx ← `(tactic| intro h; exact h)
+  evalTactic stx
 -- end
 end «6»
