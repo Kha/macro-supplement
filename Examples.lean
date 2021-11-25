@@ -86,8 +86,8 @@ def y := const x
 macro "m" n:ident : command => `(
   def f := 1
   macro "mm" : command => `(
-    def $n := f
-    def f := $n))
+    def $n := f + 1
+    def f := $n + 1))
 -- end
 m f
 mm
