@@ -234,8 +234,8 @@ def expanderToFrontend (ref : Syntax) (e : ExpanderM Syntax) : FrontendM Syntax 
             methods := Macro.mkMethods {
               expandMacro?     := fun stx => do
                 match (← expandMacroImpl? st.env stx) with
-                | some (_, stx') => some stx'
-                | none           => none
+                | some (_, Except.ok stx') => some stx'
+                | _                        => none
               hasDecl          := fun declName => return st.env.contains declName
               getCurrNamespace := return scope.currNamespace
               resolveNamespace? := fun n => return ResolveName.resolveNamespace? st.env scope.currNamespace scope.openDecls n
