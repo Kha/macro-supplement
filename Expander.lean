@@ -72,7 +72,7 @@ def getPreresolved : Syntax → List NameRes
   | _                                            => []
 
 def mkOverloadedIds (cs : List NameRes) : Syntax :=
-  Syntax.node choiceKind (cs.toArray.map (mkIdent ∘ Prod.fst))
+  Syntax.node SourceInfo.none choiceKind (cs.toArray.map (mkIdent ∘ Prod.fst))
 
 def withLocal (l : Name) : ExpanderM Syntax → ExpanderM Syntax :=
   withReader (fun ctx => { ctx with lctx := ctx.lctx.insert l })
@@ -158,11 +158,11 @@ partial def quoteSyntax : Syntax → TransformerM Syntax
     let preresolved := resolve gctx val ++ preresolved
     `(Syntax.ident SourceInfo.none $(quote rawVal)
         (addMacroScope $(quote val) msc) $(quote preresolved))
-  | stx@(Syntax.node k args) =>
+  | stx@(Syntax.node _ k args) =>
     if isAntiquot stx then pure (getAntiquotTerm stx)
     else do
       let args ← args.mapM quoteSyntax
-      `(Syntax.node $(quote k) $(quote args))
+      `(Syntax.node SourceInfo.none $(quote k) $(quote args))
   | Syntax.atom info val => `(Syntax.atom SourceInfo.none $(quote val))
   | Syntax.missing => pure Syntax.missing
 
