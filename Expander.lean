@@ -225,9 +225,8 @@ def expanderToFrontend (ref : Syntax) (e : ExpanderM Syntax) : FrontendM Syntax 
       else if k == `Lean.Parser.Term.paren then some expandParen
       -- `notation`, `macro`, and macros generated at runtime
       else
-        let table := (macroAttribute.ext.getState st.env).table
-        match table.find? k with
-        | some (t::_) => some (fun stx ctx =>
+        match macroAttribute.getValues st.env k with
+        | t::_ => some (fun stx ctx =>
           match t stx {
             mainModule := `Expander
             currMacroScope := ctx.currMacroScope
