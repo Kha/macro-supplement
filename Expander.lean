@@ -97,9 +97,9 @@ partial def getPatternVars (stx : Syntax) : ExpanderM (Array Syntax) :=
   if stx.isQuot then
     getAntiquotationIds stx
   else match stx with
-    | `(_)            => #[]
-    | `($id:ident)    => #[id]
-    | `($id:ident@$e) => do (← getPatternVars e).push id
+    | `(_)            => pure #[]
+    | `($id:ident)    => pure #[id]
+    | `($id:ident@$e) => do return (← getPatternVars e).push id
     | _               => throw "unsupported pattern in syntax match"
 
 -- expand
@@ -234,8 +234,8 @@ def expanderToFrontend (ref : Syntax) (e : ExpanderM Syntax) : FrontendM Syntax 
             methods := Macro.mkMethods {
               expandMacro?     := fun stx => do
                 match (← expandMacroImpl? st.env stx) with
-                | some (_, Except.ok stx') => some stx'
-                | _                        => none
+                | some (_, Except.ok stx') => return some stx'
+                | _                        => return none
               hasDecl          := fun declName => return st.env.contains declName
               getCurrNamespace := return scope.currNamespace
               resolveNamespace? := fun n => return ResolveName.resolveNamespace? st.env scope.currNamespace scope.openDecls n
