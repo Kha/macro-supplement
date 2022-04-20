@@ -116,7 +116,7 @@ syntax "def_bigop" str term:max term:max : command
 -- `F` is inserted only in the second expansion, the expansion of the new macro `$head`.
 macro_rules
   | `(def_bigop $head $op $unit) =>
-    `(macro $head:strLit "(" idx:index ")" F:term : term => `(\big_ [$op, $unit] ($$idx) $$F))
+    `(macro $head:str "(" idx:index ")" F:term : term => `(\big_ [$op, $unit] ($$idx) $$F))
 
 def_bigop "SUM" Nat.add 0
 #check SUM (i <- [0, 1, 2]) i+1

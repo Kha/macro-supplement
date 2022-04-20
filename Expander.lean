@@ -124,8 +124,8 @@ partial def expand : Syntax → ExpanderM Syntax
   | `(fun $id:ident => $e) => do
     let e ← withLocal (getIdentVal id) (expand e)
     `(fun $id:ident => $e)
-  | `($num:numLit) => `($num:numLit)
-  | `($str:strLit) => `($str:strLit)
+  | `($num:num) => `($num:num)
+  | `($str:str) => `($str:str)
   | `($n:quotedName) => `($n:quotedName)
   | `($fn $args*) => do
     let fn ← expand fn
@@ -195,8 +195,8 @@ partial def pp : Syntax → Format
     | ps => ppIdent id.getId ++ bracket "{" (joinSep (ps.map (format ∘ Prod.fst)) ", ") "}"
   | `(fun ($id : $ty) => $e) => paren f!"fun {paren (pp id ++ " : " ++ pp ty)} => {pp e}"
   | `(fun $id => $e) => paren f!"fun {pp id} => {pp e}"
-  | `($num:numLit) => format (num.isNatLit?.getD 0)
-  | `($str:strLit) => repr (str.isStrLit?.getD "")
+  | `($num:num) => format (num.isNatLit?.getD 0)
+  | `($str:str) => repr (str.isStrLit?.getD "")
   | `($fn $args*) => paren <| pp fn ++ " " ++ joinSep (args.toList.map pp) line
   | `(def $id:ident := $e) => f!"def {ppIdent id.getId} := {pp e}"
   | `(syntax $[(name := $n)]? $[(priority := $prio)]? $[$args:stx]* : $kind) => "syntax ..."  -- irrelevant for this example
