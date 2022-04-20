@@ -183,7 +183,7 @@ def expandParen : Transformer
 -- custom Syntax pretty printer for our core forms that uses the paper's notation for hygienic identifiers
 def ppIdent (n : Name) : Format :=
   let v := extractMacroScopes n
-  fmt <| v.scopes.foldl Name.mkNum v.name
+  format <| v.scopes.foldl Name.mkNum v.name
 
 -- flip to make output more readable
 def hideMacroRulesRhs := false
@@ -192,10 +192,10 @@ open Std.Format
 partial def pp : Syntax → Format
   | `($id:ident) => match getPreresolved id with
     | [] => ppIdent id.getId
-    | ps => ppIdent id.getId ++ bracket "{" (joinSep (ps.map (fmt ∘ Prod.fst)) ", ") "}"
+    | ps => ppIdent id.getId ++ bracket "{" (joinSep (ps.map (format ∘ Prod.fst)) ", ") "}"
   | `(fun ($id : $ty) => $e) => paren f!"fun {paren (pp id ++ " : " ++ pp ty)} => {pp e}"
   | `(fun $id => $e) => paren f!"fun {pp id} => {pp e}"
-  | `($num:numLit) => fmt (num.isNatLit?.getD 0)
+  | `($num:numLit) => format (num.isNatLit?.getD 0)
   | `($str:strLit) => repr (str.isStrLit?.getD "")
   | `($fn $args*) => paren <| pp fn ++ " " ++ joinSep (args.toList.map pp) line
   | `(def $id:ident := $e) => f!"def {ppIdent id.getId} := {pp e}"
