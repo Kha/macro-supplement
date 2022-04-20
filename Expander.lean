@@ -232,13 +232,10 @@ def expanderToFrontend (ref : Syntax) (e : ExpanderM Syntax) : FrontendM Syntax 
             currMacroScope := ctx.currMacroScope
             ref := ref
             methods := Macro.mkMethods {
-              expandMacro?     := fun stx =>
-                try
-                  let newStx ← getMacros st.env stx
-                  pure (some newStx)
-                catch
-                  | Macro.Exception.unsupportedSyntax => pure none
-                  | ex                                => throw ex
+              expandMacro?     := fun stx => do
+                match (← expandMacroImpl? st.env stx) with
+                | some (_, stx') => some stx'
+                | none           => none
               hasDecl          := fun declName => return st.env.contains declName
               getCurrNamespace := return scope.currNamespace
               resolveNamespace? := fun n => return ResolveName.resolveNamespace? st.env scope.currNamespace scope.openDecls n
