@@ -38,6 +38,7 @@ defthunk big := mkArray 100000 true
 namespace Union
 abbrev Set (α : Type) := α → Prop
 axiom setOf {α : Type} : (α → Prop) → Set α
+axiom preimage {α β : Type} : (α → β) → Set β → Set α
 axiom mem {α : Type} : α → Set α → Prop
 axiom univ {α : Type} : Set α
 axiom Union {α : Type} : Set (Set α) → Set α
@@ -46,23 +47,27 @@ macro:100 x:term " ∈ " s:term:99 : term => `(mem $x $s)
 -- union
 syntax "{" term "|" term "}" : term
 macro_rules
-  | `({$x ∈ $s | $p}) => `(setOf (fun $x => $x ∈ $s ∧ $p))
-  | `({$b      | $p}) => `(setOf (fun $b => $p))
+  | `({$x ∈ $s | $e}) => `(preimage (fun $x => $e) $s)
+  | `({$x      | $e}) => `({$x ∈ univ | $e})
 
-notation "⋃" b "," p => Union {b | p}
+notation "⋃" b "," e => Union {b | e}
 -- end
 
-#check ⋃ x,              x = x
-#check ⋃ (x : Set Unit), x = x
-#check ⋃ x ∈ univ,       x = x
+#check {n | n + 1}
+axiom primes : Set Nat
+#check {n ∈ primes | n + 1}
+
+#check ⋃ x,             (x : Set Nat)
+#check ⋃ (x : Set Nat), x
+#check ⋃ x ∈ univ,      (x : Set Nat)
 
 
 -- le
 macro_rules
-  | `({$x ≤ $e | $p}) => `(setOf (fun $x => $x ≤ $e ∧ $p))
+  | `({$x ≤ $hi | $e}) => `({$x ∈ setOf (fun x => x ≤ $hi) | $e})
 -- end
 
-#check {x ≤ 1 | x = x}
+#check {x ≤ 1 | x + 1}
 end Union
 
 
