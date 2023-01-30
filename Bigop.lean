@@ -55,18 +55,18 @@ syntax ident "<-" term "|" term : index
 syntax term:51 "≤" ident "<" term : index
 syntax term:51 "≤" ident "<" term "|" term : index
 -- Primitive notation for big operators
-syntax "\\big_" "[" term "," term "]" "(" index ")" term : term
+syntax "\\big[" term:max "/" term "]_(" index ")" term : term
 
 -- We define how to expand `\big` with the different kinds of index
 macro_rules
-  | `(\big_ [$op, $idx] ($i:ident <- $r) $F) => `(bigop $idx $r (fun $i => ($i, $op, true, $F)))
-  | `(\big_ [$op, $idx] ($i:ident <- $r | $p) $F) => `(bigop $idx $r (fun $i => ($i, $op, $p, $F)))
-  | `(\big_ [$op, $idx] ($lower:term ≤ $i:ident < $upper) $F) => `(bigop $idx (index_iota $lower $upper) (fun $i => ($i, $op, true, $F)))
-  | `(\big_ [$op, $idx] ($lower:term ≤ $i:ident < $upper | $p) $F) => `(bigop $idx (index_iota $lower $upper) (fun $i => ($i, $op, $p, $F)))
+  | `(\big[$op/$idx]_($i:ident <- $r) $F) => `(bigop $idx $r (fun $i => ($i, $op, true, $F)))
+  | `(\big[$op/$idx]_($i:ident <- $r | $p) $F) => `(bigop $idx $r (fun $i => ($i, $op, $p, $F)))
+  | `(\big[$op/$idx]_($lower:term ≤ $i:ident < $upper) $F) => `(bigop $idx (index_iota $lower $upper) (fun $i => ($i, $op, true, $F)))
+  | `(\big[$op/$idx]_($lower:term ≤ $i:ident < $upper | $p) $F) => `(bigop $idx (index_iota $lower $upper) (fun $i => ($i, $op, $p, $F)))
 
 -- Sum
 macro "Σ" "(" idx:index ")" F:term : term =>
-  `(\big_ [Add.add, 0] ($idx) $F)
+  `(\big[Add.add/0]_($idx) $F)
 -- end
 
 -- We can already use `Σ` with the different kinds of index.
@@ -77,7 +77,7 @@ macro "Σ" "(" idx:index ")" F:term : term =>
 -- Define `Π`
 -- Prod
 macro "Π" "(" idx:index ")" F:term : term =>
-  `(\big_ [Mul.mul, 1] ($idx) $F)
+  `(\big[Mul.mul/1]_($idx) $F)
 -- end
 
 -- The examples above now also work for `Π`
@@ -91,9 +91,9 @@ syntax ident ":" term : index
 syntax ident ":" term "|" term : index
 -- Add new rules
 macro_rules
-  | `(\big_ [$op, $idx] ($i:ident : $type) $F) => `(bigop $idx (Enumerable.elems (α := $type)) (fun $i => ($i, $op, true, $F)))
-  | `(\big_ [$op, $idx] ($i:ident : $type | $p) $F) => `(bigop $idx (Enumerable.elems (α := $type)) (fun $i => ($i, $op, $p, $F)))
-  | `(\big_ [$op, $idx] ($i:ident | $p) $F) => `(bigop $idx Enumerable.elems (fun $i => ($i, $op, $p, $F)))
+  | `(\big[$op/$idx]_($i:ident : $type) $F) => `(bigop $idx (Enumerable.elems (α := $type)) (fun $i => ($i, $op, true, $F)))
+  | `(\big[$op/$idx]_($i:ident : $type | $p) $F) => `(bigop $idx (Enumerable.elems (α := $type)) (fun $i => ($i, $op, $p, $F)))
+  | `(\big[$op/$idx]_($i:ident | $p) $F) => `(bigop $idx Enumerable.elems (fun $i => ($i, $op, $p, $F)))
 
 -- The new syntax is immediately available for all big operators that we have defined
 def myPred (x : Fin 10) : Bool := true
@@ -116,7 +116,7 @@ syntax "def_bigop" str term:max term:max : command
 -- `F` is inserted only in the second expansion, the expansion of the new macro `$head`.
 macro_rules
   | `(def_bigop $head $op $unit) =>
-    `(macro $head:str "(" idx:index ")" F:term : term => `(\big_ [$op, $unit] ($$idx) $$F))
+    `(macro $head:strLit "(" idx:index ")" F:term : term => `(\big[$op/$unit]_($$idx) $$F))
 
 def_bigop "SUM" Nat.add 0
 #check SUM (i <- [0, 1, 2]) i+1
